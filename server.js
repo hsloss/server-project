@@ -35,7 +35,6 @@ function locationController(req, res) {
 }
 
 function weatherController(req, res) {
-  // const url = 'https://api.darksky.net/forecast/d3f4d353a9097935306705f81711b6da/37.8267,-122.4233'
   const url =`https://api.darksky.net/forecast/${process.env.DARK_SKY_API_KEY}/${req.query.lat},${req.query.lng}`
   superagent.get(url)
     .then(result => {
