@@ -9,8 +9,7 @@ const PORT = process.env.PORT || 3000
 app.use(cors())
 app.get('/location',(req, res)=>
 {
-  const url=
- `https://maps.googleapis.com/maps/api/geocode/json?address=baltimore&key=AIzaSyBLxllyO12FSgsD_aIGJb6Tje1RFyFMOow`
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${req.query.address}&key=${process.env.GOOGLE_API_KEY}`
   superagent.get(url)
     .then(result=>{
       console.log(result)
