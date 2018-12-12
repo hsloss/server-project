@@ -14,6 +14,8 @@ app.get('/weather', weatherController)
 
 app.get('/yelp', yelpController)
 
+app.get('/movies', theMovieDBController)
+
 app.get('/', (req, res) => {
   res.send('<div>This is the Home Route</div>')
 })
@@ -59,6 +61,17 @@ function yelpController(req, res) {
     .catch(err=>res.send(err))
 }
 
+function theMovieDBController(req, res) {
+  const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.THE_MOVIE_DB_API_KEY}&query=${req.query.query}`
+  superagent.get(url)
+    .then(result => {
+      const newMovie = new MovieConstructor(result)
+      console.log(result)
+      res.send(newMovie)
+    })
+    .catch(err=>res.send(err))
+}
+
 const Location = function(loc){
   this.lat = loc.body.results[0].geometry.location.lat
   this.lng = loc.body.results[0].geometry.location.lng
@@ -75,4 +88,13 @@ const YelpConstructor = function(yelp){
   this.url = yelp.body.businesses[0].url
   this.image_url = yelp.body.businesses[0].image_url
   this.rating = yelp.body.businesses[0].rating
+}
+
+const MovieConstructor = function(mov) {
+  this.title = mov.body.results[0].title
+  this.overview = mov.body.results[0].overview
+  this.average_votes = mov.body.results[0].vote_average
+  this.total_votes = mov.body.results[0].vote_count
+  this.popularity = mov.body.results[0].popularity
+  this.released_on = mov.body.results[0].released_date
 }
