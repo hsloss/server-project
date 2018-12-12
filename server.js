@@ -12,6 +12,8 @@ app.get('/location', locationController)
 
 app.get('/weather', weatherController)
 
+app.get('/yelp', yelpController)
+
 app.get('/', (req, res) => {
   res.send('<div>This is the Home Route</div>')
 })
@@ -45,6 +47,18 @@ function weatherController(req, res) {
     .catch(err=>res.send(err))
 }
 
+function yelpController(req, res) {
+  const url =`https://api.yelp.com/v3/businesses/search?term=${req.query.term}&latitude=${req.query.latitude}&longitude=${req.query.longitude}`
+  superagent.get(url).set('Authorization', `Bearer ${process.env.YELP_API_KEY}`)
+    .then(result => {
+      const newYelp = new YelpConstructor(result)
+      console.log(result)
+      res.send(newYelp)
+      console.log(newYelp)
+    })
+    .catch(err=>res.send(err))
+}
+
 const Location = function(loc){
   this.lat = loc.body.results[0].geometry.location.lat
   this.lng = loc.body.results[0].geometry.location.lng
@@ -54,4 +68,11 @@ const WeatherConstructor = function(weather) {
   this.time = weather.body.currently.time
   this.summary = weather.body.currently.summary
   this.temp = weather.body.currently.temperature
+}
+
+const YelpConstructor = function(yelp){
+  this.name = yelp.body.businesses[0].name
+  this.url = yelp.body.businesses[0].url
+  this.image_url = yelp.body.businesses[0].image_url
+  this.rating = yelp.body.businesses[0].rating
 }
