@@ -53,10 +53,13 @@ function yelpController(req, res) {
   const url =`https://api.yelp.com/v3/businesses/search?term=${req.query.term}&latitude=${req.query.latitude}&longitude=${req.query.longitude}`
   superagent.get(url).set('Authorization', `Bearer ${process.env.YELP_API_KEY}`)
     .then(result => {
-      const newYelp = new YelpConstructor(result)
+      let arr = []
+      for(let i =0; i < result.body.businesses.length; i++){
+        const newYelp = new YelpConstructor(result.body.businesses[i])
+        arr.push(newYelp)
+      }      
       console.log(result)
-      res.send(newYelp)
-      console.log(newYelp)
+      res.send(arr)
     })
     .catch(err=>res.send(err))
 }
@@ -65,9 +68,13 @@ function theMovieDBController(req, res) {
   const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.THE_MOVIE_DB_API_KEY}&query=${req.query.query}`
   superagent.get(url)
     .then(result => {
-      const newMovie = new MovieConstructor(result)
+      let arr = []
+      for(let i = 0; i < result.body.results.length; i++){
+        let newMovie = new MovieConstructor(result.body.results[i])
+        arr.push(newMovie)
+      }
       console.log(result)
-      res.send(newMovie)
+      res.send(arr)
     })
     .catch(err=>res.send(err))
 }
@@ -84,17 +91,17 @@ const WeatherConstructor = function(weather) {
 }
 
 const YelpConstructor = function(yelp){
-  this.name = yelp.body.businesses[0].name
-  this.url = yelp.body.businesses[0].url
-  this.image_url = yelp.body.businesses[0].image_url
-  this.rating = yelp.body.businesses[0].rating
+  this.name = yelp.name
+  this.url = yelp.url
+  this.image_url = yelp.image_url
+  this.rating = yelp.rating
 }
 
 const MovieConstructor = function(mov) {
-  this.title = mov.body.results[0].title
-  this.overview = mov.body.results[0].overview
-  this.average_votes = mov.body.results[0].vote_average
-  this.total_votes = mov.body.results[0].vote_count
-  this.popularity = mov.body.results[0].popularity
-  this.released_on = mov.body.results[0].released_date
+  this.title = mov.title
+  this.overview = mov.overview
+  this.average_votes = mov.vote_average
+  this.total_votes = mov.vote_count
+  this.popularity = mov.popularity
+  this.released_on = mov.released_date
 }
