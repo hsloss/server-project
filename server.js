@@ -51,7 +51,7 @@ function locationController(req, res) {
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${req.query.address}&key=${process.env.GOOGLE_API_KEY}`
   Location.findOne({address: req.query.address}, (err, addr) => {
     if(addr) {
-      console.log('address found', req.query)
+      console.log('address found', req.query.address)
       res.send(addr)
     } else {
       superagent.get(url)
@@ -71,15 +71,36 @@ function locationController(req, res) {
     .catch(err => res.send('Got an error'))
 }
 
+const weatherSchema = new mongoose.Schema({
+  address: String,
+  lat: Number,
+  lng: Number
+})
+
+const Weather = mongoose.model('Location', locationSchema)
+
 function weatherController(req, res) {
   const url =`https://api.darksky.net/forecast/${process.env.DARK_SKY_API_KEY}/${req.query.lat},${req.query.lng}`
-  superagent.get(url)
-    .then(result => {
-      const newWeather = new WeatherConstructor(result)
-      console.log(result)
-      res.send(newWeather)
-    })
-    .catch(err=>res.send(err))
+  Location.findOne({address: req.query.address}, (err, addr) => {
+    if(addr) {
+      console.log('address found', req.query.address)
+      res.send(addr)
+    } else {
+      superagent.get(url)
+        .then(result => {
+          console.log(result)
+          const newLocation = new Location({
+            address: req.query.address,
+            lat: result.body.results[0].geometry.location.lat,
+            lng: result.body.results[0].geometry.location.lng
+          })
+          newLocation.save()
+          console.log('created new address')
+          res.send(newLocation)
+        })
+    }
+  })
+    .catch(err => res.send('Got an error'))
 }
 
 function yelpController(req, res) {
@@ -117,11 +138,11 @@ function theMovieDBController(req, res) {
 //   this.lng = loc.body.results[0].geometry.location.lng
 // }
 
-const WeatherConstructor = function(weather) {
-  this.time = weather.body.currently.time
-  this.summary = weather.body.currently.summary
-  this.temp = weather.body.currently.temperature
-}
+// const WeatherConstructor = function(weather) {
+//   this.time = weather.body.currently.time
+//   this.summary = weather.body.currently.summary
+//   this.temp = weather.body.currently.temperature
+// }
 
 const YelpConstructor = function(yelp){
   this.name = yelp.name
