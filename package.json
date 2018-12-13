@@ -1,4 +1,7 @@
 {
+  "engines": {
+    "node": "10.13.0"
+  },
   "name": "package",
   "version": "1.0.0",
   "description": "package.json",
@@ -21,8 +24,11 @@
     "cors": "^2.8.5",
     "dotenv": "^6.1.0",
     "express": "^4.16.4",
+    "g": "^2.0.1",
+    "heroku": "^7.19.3",
     "mongoose": "^5.3.16",
     "nodemon": "^1.18.7",
     "superagent": "^4.0.0"
-  }
+  },
+  "devDependencies": {}
 }

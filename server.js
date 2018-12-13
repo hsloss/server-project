@@ -1,10 +1,20 @@
 'use strict'
+const mongoose = require('mongoose')
 const express = require('express')
 const superagent =require('superagent')
 const app = express()
 const cors = require('cors')
 require('dotenv').config()
 const PORT = process.env.PORT || 3000
+const mongoURL =  `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@ds117128.mlab.com:17128/server-project`
+
+mongoose.connect(mongoURL);
+
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function() {
+  console.log('db connected')
+});
 
 app.use(cors())
 
@@ -29,13 +39,36 @@ app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`)
 })
 
+const locationSchema = new mongoose.Schema({
+  address: String,
+  lat: Number,
+  lng: Number
+})
+
+const Location = mongoose.model('Location', locationSchema)
+
 function locationController(req, res) {
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${req.query.address}&key=${process.env.GOOGLE_API_KEY}`
-  superagent.get(url)
-    .then(result=>{
-      res.send(new Location(result))
-    })
-    .catch(err=>res.send(err))
+  Location.findOne({address: req.query.address}, (err, addr) => {
+    if(addr) {
+      console.log('address found', req.query)
+      res.send(addr)
+    } else {
+      superagent.get(url)
+        .then(result => {
+          console.log(result)
+          const newLocation = new Location({
+            address: req.query.address,
+            lat: result.body.results[0].geometry.location.lat,
+            lng: result.body.results[0].geometry.location.lng
+          })
+          newLocation.save()
+          console.log('created new address')
+          res.send(newLocation)
+        })
+    }
+  })
+    .catch(err => res.send('Got an error'))
 }
 
 function weatherController(req, res) {
@@ -57,7 +90,7 @@ function yelpController(req, res) {
       for(let i =0; i < result.body.businesses.length; i++){
         const newYelp = new YelpConstructor(result.body.businesses[i])
         arr.push(newYelp)
-      }      
+      }
       console.log(result)
       res.send(arr)
     })
@@ -79,10 +112,10 @@ function theMovieDBController(req, res) {
     .catch(err=>res.send(err))
 }
 
-const Location = function(loc){
-  this.lat = loc.body.results[0].geometry.location.lat
-  this.lng = loc.body.results[0].geometry.location.lng
-}
+// const Location = function(loc){
+//   this.lat = loc.body.results[0].geometry.location.lat
+//   this.lng = loc.body.results[0].geometry.location.lng
+// }
 
 const WeatherConstructor = function(weather) {
   this.time = weather.body.currently.time
@@ -105,3 +138,6 @@ const MovieConstructor = function(mov) {
   this.popularity = mov.popularity
   this.released_on = mov.released_date
 }
+
+
+
