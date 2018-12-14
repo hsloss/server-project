@@ -20,7 +20,9 @@ app.use(cors())
 
 app.get('/location', locationController)
 
-app.get('/weather', weatherController)
+// app.get('/weather', weatherController)
+
+app.get('/meetup', meetupController)
 
 app.get('/yelp', yelpController)
 
@@ -71,37 +73,37 @@ function locationController(req, res) {
     .catch(err => res.send('Got an error'))
 }
 
-const weatherSchema = new mongoose.Schema({
-  address: String,
-  lat: Number,
-  lng: Number
-})
+// const weatherSchema = new mongoose.Schema({
+//   address: String,
+//   lat: Number,
+//   lng: Number
+// })
 
-const Weather = mongoose.model('Location', locationSchema)
+// const Weather = mongoose.model('Location', weatherSchema)
 
-function weatherController(req, res) {
-  const url =`https://api.darksky.net/forecast/${process.env.DARK_SKY_API_KEY}/${req.query.lat},${req.query.lng}`
-  Location.findOne({address: req.query.address}, (err, addr) => {
-    if(addr) {
-      console.log('address found', req.query.address)
-      res.send(addr)
-    } else {
-      superagent.get(url)
-        .then(result => {
-          console.log(result)
-          const newLocation = new Location({
-            address: req.query.address,
-            lat: result.body.results[0].geometry.location.lat,
-            lng: result.body.results[0].geometry.location.lng
-          })
-          newLocation.save()
-          console.log('created new address')
-          res.send(newLocation)
-        })
-    }
-  })
-    .catch(err => res.send('Got an error'))
-}
+// function weatherController(req, res) {
+//   const url =`https://api.darksky.net/forecast/${process.env.DARK_SKY_API_KEY}/${req.query.lat},${req.query.lng}`
+//   Location.findOne({address: req.query.address}, (err, addr) => {
+//     if(addr) {
+//       console.log('address found', req.query.address)
+//       res.send(addr)
+//     } else {
+//       superagent.get(url)
+//         .then(result => {
+//           console.log(result)
+//           const newLocation = new Location({
+//             address: req.query.address,
+//             lat: result.body.results[0].geometry.location.lat,
+//             lng: result.body.results[0].geometry.location.lng
+//           })
+//           newLocation.save()
+//           console.log('created new address')
+//           res.send(newLocation)
+//         })
+//     }
+//   })
+//     .catch(err => res.send('Got an error'))
+// }
 
 function yelpController(req, res) {
   const url =`https://api.yelp.com/v3/businesses/search?term=${req.query.term}&latitude=${req.query.latitude}&longitude=${req.query.longitude}`
@@ -133,6 +135,23 @@ function theMovieDBController(req, res) {
     .catch(err=>res.send(err))
 }
 
+function meetupController(req, res) {
+  const url = `https://api.meetup.com/find/groups?key=${process.env.MEETUP_API_KEY}&sign=true&photo-host=public&location=${req.query.location}&page=20`
+  superagent.get(url)
+    .then(result => {
+      console.log(result)
+      let arr = []
+      for(let i = 0; i < result.body.length; i++){
+        let newMeetup = new MeetupConstructor(result.body[i])
+        arr.push(newMeetup)
+      }
+      console.log(result)
+      res.send(arr)
+    })
+    .catch(err=>res.send(err))
+}
+
+
 // const Location = function(loc){
 //   this.lat = loc.body.results[0].geometry.location.lat
 //   this.lng = loc.body.results[0].geometry.location.lng
@@ -160,5 +179,9 @@ const MovieConstructor = function(mov) {
   this.released_on = mov.released_date
 }
 
-
-
+const MeetupConstructor = function(meetup) {
+  this.link = meetup.link,
+  this.name = meetup.name,
+  this.created = meetup.created
+  this.description = meetup.description
+}
