@@ -22,11 +22,13 @@ app.get('/location', locationController)
 
 // app.get('/weather', weatherController)
 
-app.get('/meetup', meetupController)
-
 app.get('/yelp', yelpController)
 
 app.get('/movies', theMovieDBController)
+
+app.get('/meetup', meetupController)
+
+app.get('/trails', hikingController)
 
 app.get('/', (req, res) => {
   res.send('<div>This is the Home Route</div>')
@@ -151,6 +153,22 @@ function meetupController(req, res) {
     .catch(err=>res.send(err))
 }
 
+function hikingController(req, res) {
+  const url = `https://www.hikingproject.com/data/get-trails?lat=${req.query.lat}&lon=${req.query.lon}&maxDistance=10&key=${process.env.HIKING_API_KEY}`
+  superagent.get(url)
+    .then(result => {
+      console.log(result)
+      let arr = []
+      for(let i = 0; i < result.body.trails.length; i++){
+        let newHiking = new HikingConstructor(result.body.trails[i])
+        arr.push(newHiking)
+      }
+      console.log(result)
+      res.send(arr)
+    })
+    .catch(err=>res.send(err))
+}
+
 
 // const Location = function(loc){
 //   this.lat = loc.body.results[0].geometry.location.lat
@@ -184,4 +202,17 @@ const MeetupConstructor = function(meetup) {
   this.name = meetup.name,
   this.created = meetup.created
   this.description = meetup.description
+}
+
+const HikingConstructor = function(hiking) {
+  this.name = hiking.name,
+  this.location = hiking.location,
+  this.length = hiking.length,
+  this.stars = hiking.stars,
+  this.starVotes = hiking.starVotes,
+  this.summary = hiking.summary,
+  this.trail_url = hiking.trail_url,
+  this.conditionStatus = hiking.conditionStatus,
+  this.conditionDate = hiking.conditionDate
+  this.conditionDetails = hiking.conditionDetails
 }
