@@ -20,13 +20,15 @@ app.use(cors())
 
 app.get('/location', locationController)
 
-// app.get('/weather', weatherController)
-
-app.get('/meetup', meetupController)
+app.get('/weather', weatherController)
 
 app.get('/yelp', yelpController)
 
 app.get('/movies', theMovieDBController)
+
+app.get('/meetup', meetupController)
+
+app.get('/trails', hikingController)
 
 app.get('/', (req, res) => {
   res.send('<div>This is the Home Route</div>')
@@ -73,37 +75,17 @@ function locationController(req, res) {
     .catch(err => res.send('Got an error'))
 }
 
-// const weatherSchema = new mongoose.Schema({
-//   address: String,
-//   lat: Number,
-//   lng: Number
-// })
-
-// const Weather = mongoose.model('Location', weatherSchema)
-
-// function weatherController(req, res) {
-//   const url =`https://api.darksky.net/forecast/${process.env.DARK_SKY_API_KEY}/${req.query.lat},${req.query.lng}`
-//   Location.findOne({address: req.query.address}, (err, addr) => {
-//     if(addr) {
-//       console.log('address found', req.query.address)
-//       res.send(addr)
-//     } else {
-//       superagent.get(url)
-//         .then(result => {
-//           console.log(result)
-//           const newLocation = new Location({
-//             address: req.query.address,
-//             lat: result.body.results[0].geometry.location.lat,
-//             lng: result.body.results[0].geometry.location.lng
-//           })
-//           newLocation.save()
-//           console.log('created new address')
-//           res.send(newLocation)
-//         })
-//     }
-//   })
-//     .catch(err => res.send('Got an error'))
-// }
+function weatherController(req, res) {
+  // const url = 'https://api.darksky.net/forecast/d3f4d353a9097935306705f81711b6da/37.8267,-122.4233'
+  const url =`https://api.darksky.net/forecast/${process.env.DARK_SKY_API_KEY}/${req.query.lat},${req.query.lng}`
+  superagent.get(url)
+    .then(result => {
+      const newWeather = new WeatherConstructor(result)
+      console.log(result)
+      res.send(newWeather)
+    })
+    .catch(err=>res.send(err))
+}
 
 function yelpController(req, res) {
   const url =`https://api.yelp.com/v3/businesses/search?term=${req.query.term}&latitude=${req.query.latitude}&longitude=${req.query.longitude}`
@@ -151,17 +133,27 @@ function meetupController(req, res) {
     .catch(err=>res.send(err))
 }
 
+function hikingController(req, res) {
+  const url = `https://www.hikingproject.com/data/get-trails?lat=${req.query.lat}&lon=${req.query.lon}&maxDistance=10&key=${process.env.HIKING_API_KEY}`
+  superagent.get(url)
+    .then(result => {
+      console.log(result)
+      let arr = []
+      for(let i = 0; i < result.body.trails.length; i++){
+        let newHiking = new HikingConstructor(result.body.trails[i])
+        arr.push(newHiking)
+      }
+      console.log(result)
+      res.send(arr)
+    })
+    .catch(err=>res.send(err))
+}
 
-// const Location = function(loc){
-//   this.lat = loc.body.results[0].geometry.location.lat
-//   this.lng = loc.body.results[0].geometry.location.lng
-// }
-
-// const WeatherConstructor = function(weather) {
-//   this.time = weather.body.currently.time
-//   this.summary = weather.body.currently.summary
-//   this.temp = weather.body.currently.temperature
-// }
+const WeatherConstructor = function(weather) {
+  this.time = weather.body.currently.time
+  this.summary = weather.body.currently.summary
+  this.temp = weather.body.currently.temperature
+}
 
 const YelpConstructor = function(yelp){
   this.name = yelp.name
@@ -184,4 +176,17 @@ const MeetupConstructor = function(meetup) {
   this.name = meetup.name,
   this.created = meetup.created
   this.description = meetup.description
+}
+
+const HikingConstructor = function(hiking) {
+  this.name = hiking.name,
+  this.location = hiking.location,
+  this.length = hiking.length,
+  this.stars = hiking.stars,
+  this.starVotes = hiking.starVotes,
+  this.summary = hiking.summary,
+  this.trail_url = hiking.trail_url,
+  this.conditionStatus = hiking.conditionStatus,
+  this.conditionDate = hiking.conditionDate
+  this.conditionDetails = hiking.conditionDetails
 }
